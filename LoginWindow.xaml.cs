@@ -21,7 +21,7 @@ namespace Connect4Client
         private async void LoginButton_Click(object sender, RoutedEventArgs e)
         {
             txtError.Visibility = Visibility.Collapsed;
-            
+
             if (string.IsNullOrWhiteSpace(txtPlayerId.Text))
             {
                 ShowError("Please enter your Player ID");
@@ -89,13 +89,5 @@ namespace Connect4Client
             txtError.Text = message;
             txtError.Visibility = Visibility.Visible;
         }
-
-        private void Window_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
-        {
-            if (e.Key == System.Windows.Input.Key.Enter)
-            {
-                LoginButton_Click(sender, e);
-            }
-        }
     }
-} 
+}

@@ -15,7 +15,7 @@ namespace Connect4Client.Services
         }
 
         /// <summary>
-        /// Saves the current game state to the database (only for finished games)
+        /// Saves or updates a player's game state in the database (only for finished games)
         /// </summary>
         public async Task SaveGameState(int playerId, int[,] boardState, bool isPlayerTurn, int gameId, string gameStatus, List<MoveRecord>? turnHistory = null)
         {
@@ -25,16 +25,16 @@ namespace Connect4Client.Services
                 {
                     throw new InvalidOperationException("Service provider is null");
                 }
-                
+
                 using var scope = serviceProvider.CreateScope();
                 var context = scope.ServiceProvider.GetRequiredService<GameContext>();
-                
+
                 string boardStateString = ConvertBoardStateToString(boardState);
                 string turnHistoryString = turnHistory != null ? System.Text.Json.JsonSerializer.Serialize(turnHistory) : "";
-                
+
                 var existingGame = await context.SavedGames
                     .FirstOrDefaultAsync(g => g.PlayerId == playerId && g.GameId == gameId);
-                
+
                 if (existingGame != null)
                 {
                     existingGame.BoardStateJson = boardStateString;
@@ -55,10 +55,10 @@ namespace Connect4Client.Services
                         GameStatus = gameStatus,
                         MoveHistoryJson = turnHistoryString
                     };
-                    
+
                     context.SavedGames.Add(savedGame);
                 }
-                
+
                 await context.SaveChangesAsync();
             }
             catch (Exception ex)
@@ -136,75 +136,6 @@ namespace Connect4Client.Services
         }
 
         /// <summary>
-        /// Loads the most recent game state for a player
-        /// </summary>
-        public async Task<GameState?> LoadGameState(int playerId)
-        {
-            using var scope = serviceProvider.CreateScope();
-            var context = scope.ServiceProvider.GetRequiredService<GameContext>();
-            
-            var savedGame = await context.SavedGames
-                .FirstOrDefaultAsync(g => g.PlayerId == playerId);
-            
-            if (savedGame == null)
-                return null;
-            
-            int[,] boardState = ConvertStringToBoardState(savedGame.BoardStateJson);
-            List<MoveRecord>? turnHistory = null;
-            
-            if (!string.IsNullOrEmpty(savedGame.MoveHistoryJson))
-            {
-                try
-                {
-                    turnHistory = System.Text.Json.JsonSerializer.Deserialize<List<MoveRecord>>(savedGame.MoveHistoryJson);
-                }
-                catch
-                {
-                    // If deserialization fails, turnHistory remains null
-                }
-            }
-            
-            return new GameState
-            {
-                Id = savedGame.Id,
-                PlayerId = savedGame.PlayerId,
-                BoardState = boardState,
-                IsPlayerTurn = savedGame.IsPlayerTurn,
-                SavedAt = savedGame.SavedAt,
-                GameStatus = savedGame.GameStatus,
-                MoveHistory = turnHistory
-            };
-        }
-
-        /// <summary>
-        /// Deletes the saved game for a player
-        /// </summary>
-        public async Task DeleteSavedGame(int playerId)
-        {
-            using var scope = serviceProvider.CreateScope();
-            var context = scope.ServiceProvider.GetRequiredService<GameContext>();
-            
-            var savedGame = await context.SavedGames
-                .FirstOrDefaultAsync(g => g.PlayerId == playerId);
-            
-            if (savedGame != null)
-            {
-                context.SavedGames.Remove(savedGame);
-                await context.SaveChangesAsync();
-            }
-        }
-
-        /// <summary>
-        /// Gets all saved games from the database
-        /// </summary>
-        public async Task<List<SavedGame>> GetAllSavedGames()
-        {
-            using var scope = serviceProvider.CreateScope();
-            var context = scope.ServiceProvider.GetRequiredService<GameContext>();
-            return await context.SavedGames.ToListAsync();
-        }
-
-        /// <summary>
         /// Gets all saved games for a specific player in chronological order
         /// </summary>
         public async Task<List<SavedGame>> GetSavedGamesForPlayer(int playerId)
@@ -215,15 +146,15 @@ namespace Connect4Client.Services
                 {
                     throw new InvalidOperationException("Service provider is null");
                 }
-                
+
                 using var scope = serviceProvider.CreateScope();
                 var context = scope.ServiceProvider.GetRequiredService<GameContext>();
-                
+
                 var allGames = await context.SavedGames
                     .Where(g => g.PlayerId == playerId)
                     .OrderBy(g => g.SavedAt)
                     .ToListAsync();
-                
+
                 // Filter out games that are completely empty (no pieces played)
                 var gamesWithPieces = new List<SavedGame>();
                 foreach (var game in allGames)
@@ -237,7 +168,7 @@ namespace Connect4Client.Services
                         }
                     }
                 }
-                
+
                 return gamesWithPieces;
             }
             catch (Exception ex)
@@ -265,17 +196,6 @@ namespace Connect4Client.Services
         }
 
         /// <summary>
-        /// Gets a specific saved game by its ID
-        /// </summary>
-        public async Task<SavedGame?> GetSavedGameById(int savedGameId)
-        {
-            using var scope = serviceProvider.CreateScope();
-            var context = scope.ServiceProvider.GetRequiredService<GameContext>();
-            return await context.SavedGames
-                .FirstOrDefaultAsync(g => g.Id == savedGameId);
-        }
-
-        /// <summary>
         /// Updates the game status for a specific game
         /// </summary>
         public async Task UpdateGameStatus(int playerId, int gameId, string status)
@@ -284,10 +204,10 @@ namespace Connect4Client.Services
             {
                 using var scope = serviceProvider.CreateScope();
                 var context = scope.ServiceProvider.GetRequiredService<GameContext>();
-                
+
                 var savedGame = await context.SavedGames
                     .FirstOrDefaultAsync(g => g.PlayerId == playerId && g.GameId == gameId);
-                
+
                 if (savedGame != null)
                 {
                     savedGame.GameStatus = status;
@@ -300,4 +220,4 @@ namespace Connect4Client.Services
             }
         }
     }
-} 
+}

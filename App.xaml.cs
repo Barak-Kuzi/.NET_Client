@@ -11,9 +11,12 @@ namespace Connect4Client
     public partial class App : Application
     {
         private ServiceProvider? serviceProvider;
-        
+
         public IServiceProvider? Services => serviceProvider;
 
+        /// <summary>
+        /// Handles application startup logic, including setting shutdown mode, initializing services,
+        /// showing the login window, and launching the main window if login is successful.
         protected override void OnStartup(StartupEventArgs e)
         {
             try
@@ -21,10 +24,10 @@ namespace Connect4Client
                 base.OnStartup(e);
                 Application.Current.ShutdownMode = ShutdownMode.OnExplicitShutdown;
                 InitializeServices();
-                
+
                 var loginWindow = new LoginWindow();
                 var loginResult = loginWindow.ShowDialog();
-                
+
                 if (loginResult == true && loginWindow.LoggedInPlayer != null)
                 {
                     var mainWindow = new MainWindow(loginWindow.LoggedInPlayer);
@@ -39,30 +42,34 @@ namespace Connect4Client
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Application startup error: {ex.Message}", 
+                MessageBox.Show($"Application startup error: {ex.Message}",
                     "Startup Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 Shutdown();
             }
         }
 
+        /// <summary>
+        /// Initializes application services and configures the database context using dependency injection.
+        /// Verifies that a connection to the database can be established.
+        /// </summary>
         private void InitializeServices()
         {
             try
             {
                 var services = new ServiceCollection();
-                
+
                 string currentDirectory = Directory.GetCurrentDirectory();
                 string dbPath = Path.Combine(currentDirectory, "Connect4ClientDb.mdf");
                 string connectionString = $"Data Source=(localdb)\\MSSQLLocalDB;AttachDbFilename={dbPath};Database=Connect4ClientDb;Trusted_Connection=True;MultipleActiveResultSets=true";
-                
+
                 services.AddDbContext<GameContext>(options =>
                     options.UseSqlServer(connectionString));
-                
+
                 serviceProvider = services.BuildServiceProvider();
-                
+
                 using var scope = serviceProvider.CreateScope();
                 var context = scope.ServiceProvider.GetRequiredService<GameContext>();
-                
+
                 context.Database.CanConnect();
             }
             catch (Exception ex)
@@ -83,4 +90,4 @@ namespace Connect4Client
             base.OnExit(e);
         }
     }
-} 
+}
