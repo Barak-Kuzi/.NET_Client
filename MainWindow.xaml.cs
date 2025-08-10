@@ -32,7 +32,6 @@ namespace Connect4Client
         private DispatcherTimer cpuMoveTimer = null!;
         private DispatcherTimer colorChangeTimer = null!;
         private Ellipse? droppingPiece;
-        private int animationColumn = -1;
         private int animationRow = -1;
         private double animationSpeed = 8.0;
 
