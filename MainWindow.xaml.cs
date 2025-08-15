@@ -781,6 +781,10 @@ namespace Connect4Client
             await StartNewGame();
         }
 
+        /// <summary>
+        /// Starts a new game for the current player by requesting a fresh game state from the server.
+        /// Resets the local board, clears move history, stops old timers, and updates the UI.
+        /// </summary>
         private async Task StartNewGame()
         {
             try
